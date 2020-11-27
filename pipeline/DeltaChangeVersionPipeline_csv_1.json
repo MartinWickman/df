@@ -1,5 +1,5 @@
 {
-	"name": "DeltaChangeVersionPipeline_csv_baz",
+	"name": "DeltaChangeVersionPipeline_csv_1",
 	"properties": {
 		"description": "Uses sys_change_version",
 		"activities": [
