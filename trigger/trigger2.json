@@ -1,5 +1,5 @@
 {
-	"name": "trigger1",
+	"name": "trigger2",
 	"properties": {
 		"annotations": [],
 		"runtimeState": "Started",
@@ -16,7 +16,7 @@
 			"recurrence": {
 				"frequency": "Minute",
 				"interval": 2,
-				"startTime": "2020-11-27T16:04:00Z",
+				"startTime": "2020-11-25T16:04:00Z",
 				"timeZone": "UTC"
 			}
 		}
