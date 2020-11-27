@@ -25,7 +25,7 @@
 	},
 	"resources": [
 		{
-			"name": "[concat(parameters('factoryName'), '/testpipeline3')]",
+			"name": "[concat(parameters('factoryName'), '/testpipeline4')]",
 			"type": "Microsoft.DataFactory/factories/pipelines",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -384,7 +384,7 @@
 			]
 		},
 		{
-			"name": "[concat(parameters('factoryName'), '/trigger2')]",
+			"name": "[concat(parameters('factoryName'), '/trigger3')]",
 			"type": "Microsoft.DataFactory/factories/triggers",
 			"apiVersion": "2018-06-01",
 			"properties": {
@@ -393,7 +393,7 @@
 				"pipelines": [
 					{
 						"pipelineReference": {
-							"referenceName": "testpipeline3",
+							"referenceName": "testpipeline4",
 							"type": "PipelineReference"
 						},
 						"parameters": {}
@@ -410,7 +410,7 @@
 				}
 			},
 			"dependsOn": [
-				"[concat(variables('factoryId'), '/pipelines/testpipeline3')]"
+				"[concat(variables('factoryId'), '/pipelines/testpipeline4')]"
 			]
 		},
 		{
