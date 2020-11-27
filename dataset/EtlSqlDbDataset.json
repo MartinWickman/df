@@ -1,0 +1,76 @@
+{
+	"name": "EtlSqlDbDataset",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "EtlSqlDbLinkedService",
+			"type": "LinkedServiceReference"
+		},
+		"annotations": [],
+		"type": "AzureSqlTable",
+		"schema": [
+			{
+				"name": "CustomerID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "InvoiceID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "DueDate",
+				"type": "datetime",
+				"precision": 23,
+				"scale": 3
+			},
+			{
+				"name": "InvoiceNumber",
+				"type": "nvarchar"
+			},
+			{
+				"name": "TotalAmount",
+				"type": "decimal",
+				"precision": 19,
+				"scale": 6
+			},
+			{
+				"name": "BillLocationID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "SiteID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "BillingName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "BillingAddress",
+				"type": "nvarchar"
+			},
+			{
+				"name": "InvoiceProductID",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "ProductName",
+				"type": "nvarchar"
+			},
+			{
+				"name": "InvoiceSysChangeVersion",
+				"type": "int",
+				"precision": 10
+			},
+			{
+				"name": "InvoiceSysChangeOperation",
+				"type": "nchar"
+			}
+		]
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

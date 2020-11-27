@@ -1,0 +1,6 @@
+{
+	"name": "FileStuffLinkedService",
+	"properties": {
+		"type": "SelfHosted"
+	}
+}

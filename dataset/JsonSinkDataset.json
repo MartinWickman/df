@@ -1,0 +1,29 @@
+{
+	"name": "JsonSinkDataset",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "AzureStorageLinkedBlobService",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"outputDir": {
+				"type": "string",
+				"defaultValue": "not-set"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobStorageLocation",
+				"folderPath": {
+					"value": "@dataset().outputDir",
+					"type": "Expression"
+				},
+				"container": "adftutorial"
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.DataFactory/factories/datasets"
+}

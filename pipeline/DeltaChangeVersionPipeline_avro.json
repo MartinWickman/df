@@ -1,0 +1,262 @@
+{
+	"name": "DeltaChangeVersionPipeline_avro",
+	"properties": {
+		"description": "Uses sys_change_version",
+		"activities": [
+			{
+				"name": "LookupOldWaterMarkActivity",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT change_version FROM watermarktable WHERE TableName = '@{variables('TableName')}'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "WatermarkDataset",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "LookupNewWaterMarkActivity",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT MAX(InvoiceSysChangeVersion) AS NewChangeVersion FROM @{variables('TableName')}",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "EtlSqlDbDataset",
+						"type": "DatasetReference"
+					}
+				}
+			},
+			{
+				"name": "Set var new watermark",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "LookupNewWaterMarkActivity",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "NewWatermark",
+					"value": {
+						"value": "@{activity('LookupNewWaterMarkActivity').output.firstRow.NewChangeVersion}",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set var old watermark",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "LookupOldWaterMarkActivity",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "OldWatermark",
+					"value": {
+						"value": "@{activity('LookupOldWaterMarkActivity').output.firstRow.change_version}",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "If watermark is sane",
+				"type": "IfCondition",
+				"dependsOn": [
+					{
+						"activity": "Set var new watermark",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Set var old watermark",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"expression": {
+						"value": "@greater(int(variables('NewWatermark')), int(variables('OldWatermark')))",
+						"type": "Expression"
+					},
+					"ifFalseActivities": [
+						{
+							"name": "Wait1_FALSE",
+							"type": "Wait",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 1
+							}
+						}
+					],
+					"ifTrueActivities": [
+						{
+							"name": "From SQL to Blob",
+							"type": "Copy",
+							"dependsOn": [],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "AzureSqlSource",
+									"sqlReaderQuery": {
+										"value": "SELECT * from @{variables('TableName')} WHERE InvoiceSysChangeVersion > '@{variables('OldWatermark')}' AND InvoiceSysChangeVersion <= '@{variables('NewWatermark')}'",
+										"type": "Expression"
+									},
+									"queryTimeout": "02:00:00",
+									"partitionOption": "None"
+								},
+								"sink": {
+									"type": "AvroSink",
+									"storeSettings": {
+										"type": "AzureBlobStorageWriteSettings"
+									},
+									"formatSettings": {
+										"type": "AvroWriteSettings"
+									}
+								},
+								"enableStaging": false,
+								"translator": {
+									"type": "TabularTranslator",
+									"typeConversion": true,
+									"typeConversionSettings": {
+										"allowDataTruncation": true,
+										"treatBooleanAsNumber": false
+									}
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "EtlSqlDbDataset",
+									"type": "DatasetReference"
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "AvroSinkDataset",
+									"type": "DatasetReference",
+									"parameters": {
+										"outputDir": {
+											"value": "@variables('TableName')",
+											"type": "Expression"
+										}
+									}
+								}
+							]
+						},
+						{
+							"name": "Write watermark",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "From SQL to Blob",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[dbo].[usp_write_changeversion]",
+								"storedProcedureParameters": {
+									"TableName": {
+										"value": {
+											"value": "@variables('TableName')",
+											"type": "Expression"
+										},
+										"type": "String"
+									},
+									"version": {
+										"value": {
+											"value": "@variables('NewWatermark')",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "AzureSqlDatabaseLinkedService",
+								"type": "LinkedServiceReference"
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"NewWatermark": {
+				"type": "String",
+				"defaultValue": "0"
+			},
+			"OldWatermark": {
+				"type": "String",
+				"defaultValue": "99999999999"
+			},
+			"TableName": {
+				"type": "String",
+				"defaultValue": "bixia_service_Invoices"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2020-11-27T11:43:53Z"
+	},
+	"type": "Microsoft.DataFactory/factories/pipelines"
+}
