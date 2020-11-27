@@ -1,5 +1,5 @@
 {
-	"name": "testpipeline3",
+	"name": "testpipeline4",
 	"properties": {
 		"description": "Uses sys_change_version",
 		"activities": [

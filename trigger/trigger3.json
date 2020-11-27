@@ -6,7 +6,7 @@
 		"pipelines": [
 			{
 				"pipelineReference": {
-					"referenceName": "testpipeline3",
+					"referenceName": "testpipeline4",
 					"type": "PipelineReference"
 				}
 			}
