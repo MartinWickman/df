@@ -115,6 +115,18 @@
 						"dependencyConditions": [
 							"Succeeded"
 						]
+					},
+					{
+						"activity": "Set var old customer wm",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					},
+					{
+						"activity": "Set var new customer wm",
+						"dependencyConditions": [
+							"Succeeded"
+						]
 					}
 				],
 				"userProperties": [],
@@ -279,6 +291,103 @@
 							}
 						}
 					]
+				}
+			},
+			{
+				"name": "NewCustomer",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT MAX(sys_change_version) AS NewChangeVersion FROM PBT_Customer",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "EtlSqlDbDataset",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": true
+				}
+			},
+			{
+				"name": "Set var new customer wm",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "NewCustomer",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "CustomerNew",
+					"value": {
+						"value": "@{activity('NewCustomer').output.firstRow.NewChangeVersion}",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "Set var old customer wm",
+				"type": "SetVariable",
+				"dependsOn": [
+					{
+						"activity": "OldCustomer",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"variableName": "CustomerOld",
+					"value": {
+						"value": "@{activity('OldCustomer').output.firstRow.OldChangeVersion}",
+						"type": "Expression"
+					}
+				}
+			},
+			{
+				"name": "OldCustomer",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "7.00:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "AzureSqlSource",
+						"sqlReaderQuery": {
+							"value": "SELECT change_version AS OldChangeVersion FROM watermarktable WHERE TableName = 'PBT_Customer'",
+							"type": "Expression"
+						},
+						"queryTimeout": "02:00:00",
+						"partitionOption": "None"
+					},
+					"dataset": {
+						"referenceName": "WatermarkDataset",
+						"type": "DatasetReference"
+					}
 				}
 			}
 		],
