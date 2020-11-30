@@ -4,7 +4,7 @@
 		"description": "Uses sys_change_version",
 		"activities": [
 			{
-				"name": "LookupOldWaterMarkActivity",
+				"name": "OldInvoice",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {
@@ -19,7 +19,7 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": {
-							"value": "SELECT change_version FROM watermarktable WHERE TableName = '@{variables('TableName')}'",
+							"value": "SELECT change_version AS OldChangeVersion FROM watermarktable WHERE TableName = 'PBT_Invoice'",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
@@ -32,7 +32,7 @@
 				}
 			},
 			{
-				"name": "LookupNewWaterMarkActivity",
+				"name": "NewInvoice",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {
@@ -47,7 +47,7 @@
 					"source": {
 						"type": "AzureSqlSource",
 						"sqlReaderQuery": {
-							"value": "SELECT MAX(InvoiceSysChangeVersion) AS NewChangeVersion FROM @{variables('TableName')}",
+							"value": "SELECT MAX(sys_change_version) AS NewChangeVersion FROM PBT_Invoice",
 							"type": "Expression"
 						},
 						"queryTimeout": "02:00:00",
@@ -56,7 +56,8 @@
 					"dataset": {
 						"referenceName": "EtlSqlDbDataset",
 						"type": "DatasetReference"
-					}
+					},
+					"firstRowOnly": true
 				}
 			},
 			{
@@ -64,7 +65,7 @@
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "LookupNewWaterMarkActivity",
+						"activity": "NewInvoice",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -72,9 +73,9 @@
 				],
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "NewWatermark",
+					"variableName": "InvoiceNew",
 					"value": {
-						"value": "@{activity('LookupNewWaterMarkActivity').output.firstRow.NewChangeVersion}",
+						"value": "@{activity('NewInvoice').output.firstRow.NewChangeVersion}",
 						"type": "Expression"
 					}
 				}
@@ -84,7 +85,7 @@
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "LookupOldWaterMarkActivity",
+						"activity": "OldInvoice",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -92,9 +93,9 @@
 				],
 				"userProperties": [],
 				"typeProperties": {
-					"variableName": "OldWatermark",
+					"variableName": "InvoiceOld",
 					"value": {
-						"value": "@{activity('LookupOldWaterMarkActivity').output.firstRow.change_version}",
+						"value": "@{activity('OldInvoice').output.firstRow.OldChangeVersion}",
 						"type": "Expression"
 					}
 				}
@@ -119,7 +120,7 @@
 				"userProperties": [],
 				"typeProperties": {
 					"expression": {
-						"value": "@greater(int(variables('NewWatermark')), int(variables('OldWatermark')))",
+						"value": "@or(greater(int(variables('InvoiceNew')), int(variables('InvoiceOld'))),\ngreater(int(variables('CustomerNew')), int(variables('CustomerOld')))\n)",
 						"type": "Expression"
 					},
 					"ifFalseActivities": [
@@ -150,7 +151,7 @@
 								"source": {
 									"type": "AzureSqlSource",
 									"sqlReaderQuery": {
-										"value": "SELECT * from @{variables('TableName')} WHERE InvoiceSysChangeVersion > '@{variables('OldWatermark')}' AND InvoiceSysChangeVersion <= '@{variables('NewWatermark')}'",
+										"value": "SELECT * from @{variables('TableName')} \nWHERE \nInvoiceSysChangeVersion > '@{variables('InvoiceOld')}' AND InvoiceSysChangeVersion <= '@{variables('InvoiceNew')}'\nOR\nCustomerSysChangeVersion > '@{variables('CustomerOld')}' AND CustomerSysChangeVersion <= '@{variables('CustomerNew')}'",
 										"type": "Expression"
 									},
 									"queryTimeout": "02:00:00",
@@ -260,6 +261,22 @@
 			"TableName": {
 				"type": "String",
 				"defaultValue": "bixia_service_Invoices"
+			},
+			"InvoiceNew": {
+				"type": "String",
+				"defaultValue": "0"
+			},
+			"InvoiceOld": {
+				"type": "String",
+				"defaultValue": "999999999999"
+			},
+			"CustomerNew": {
+				"type": "String",
+				"defaultValue": "0"
+			},
+			"CustomerOld": {
+				"type": "String",
+				"defaultValue": "999999999999"
 			}
 		},
 		"annotations": [],
