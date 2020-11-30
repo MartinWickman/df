@@ -117,7 +117,7 @@
 						]
 					},
 					{
-						"activity": "Old Customer wm",
+						"activity": "Set CustomerOld",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -343,11 +343,11 @@
 				}
 			},
 			{
-				"name": "Old Customer wm",
+				"name": "Set CustomerOld",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "OldCustomer",
+						"activity": "LookupCustomerOld",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -357,13 +357,13 @@
 				"typeProperties": {
 					"variableName": "CustomerOld",
 					"value": {
-						"value": "@{activity('OldCustomer').output.firstRow.OldChangeVersion}",
+						"value": "@{activity('LookupCustomerOld').output.firstRow.OldChangeVersion}",
 						"type": "Expression"
 					}
 				}
 			},
 			{
-				"name": "OldCustomer",
+				"name": "LookupCustomerOld",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {
