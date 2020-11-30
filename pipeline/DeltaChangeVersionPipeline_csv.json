@@ -163,7 +163,7 @@
 									},
 									"formatSettings": {
 										"type": "DelimitedTextWriteSettings",
-										"maxRowsPerFile": 2,
+										"maxRowsPerFile": 100,
 										"fileNamePrefix": {
 											"value": "@concat(variables('OldWatermark'), '-', variables('NewWatermark'), '-', pipeline().RunId)",
 											"type": "Expression"
