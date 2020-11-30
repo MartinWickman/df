@@ -165,10 +165,6 @@
 									"formatSettings": {
 										"type": "DelimitedTextWriteSettings",
 										"maxRowsPerFile": 100,
-										"fileNamePrefix": {
-											"value": "@concat(variables('OldWatermark'), '-', variables('NewWatermark'), '-', pipeline().RunId)",
-											"type": "Expression"
-										},
 										"quoteAllText": true,
 										"fileExtension": ".txt"
 									}
@@ -203,7 +199,7 @@
 							]
 						},
 						{
-							"name": "Write watermark",
+							"name": "Store invoice watermark",
 							"type": "SqlServerStoredProcedure",
 							"dependsOn": [
 								{
@@ -225,15 +221,52 @@
 								"storedProcedureName": "[dbo].[usp_write_changeversion]",
 								"storedProcedureParameters": {
 									"TableName": {
-										"value": {
-											"value": "@variables('TableName')",
-											"type": "Expression"
-										},
+										"value": "PBT_Invoice",
 										"type": "String"
 									},
 									"version": {
 										"value": {
-											"value": "@variables('NewWatermark')",
+											"value": "@variables('InvoiceNew')",
+											"type": "Expression"
+										},
+										"type": "Int32"
+									}
+								}
+							},
+							"linkedServiceName": {
+								"referenceName": "AzureSqlDatabaseLinkedService",
+								"type": "LinkedServiceReference"
+							}
+						},
+						{
+							"name": "Store customer watermark",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "From SQL to Blob",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "7.00:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[dbo].[usp_write_changeversion]",
+								"storedProcedureParameters": {
+									"TableName": {
+										"value": "PBT_Customer",
+										"type": "String"
+									},
+									"version": {
+										"value": {
+											"value": "@variables('CustomerNew')",
 											"type": "Expression"
 										},
 										"type": "Int32"
@@ -250,14 +283,6 @@
 			}
 		],
 		"variables": {
-			"NewWatermark": {
-				"type": "String",
-				"defaultValue": "0"
-			},
-			"OldWatermark": {
-				"type": "String",
-				"defaultValue": "99999999999"
-			},
 			"TableName": {
 				"type": "String",
 				"defaultValue": "bixia_service_Invoices"
