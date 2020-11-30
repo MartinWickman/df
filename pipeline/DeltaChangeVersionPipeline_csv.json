@@ -4,7 +4,7 @@
 		"description": "Uses sys_change_version",
 		"activities": [
 			{
-				"name": "OldInvoice",
+				"name": "LookupInvoiceOld",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {
@@ -32,7 +32,7 @@
 				}
 			},
 			{
-				"name": "NewInvoice",
+				"name": "LookupInvoiceNew",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {
@@ -61,11 +61,11 @@
 				}
 			},
 			{
-				"name": "Set var new watermark",
+				"name": "Set InvoiceNew",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "NewInvoice",
+						"activity": "LookupInvoiceNew",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -75,17 +75,17 @@
 				"typeProperties": {
 					"variableName": "InvoiceNew",
 					"value": {
-						"value": "@{activity('NewInvoice').output.firstRow.NewChangeVersion}",
+						"value": "@{activity('LookupInvoiceNew').output.firstRow.NewChangeVersion}",
 						"type": "Expression"
 					}
 				}
 			},
 			{
-				"name": "Set var old watermark",
+				"name": "Set InvoiceOld",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "OldInvoice",
+						"activity": "LookupInvoiceOld",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -95,7 +95,7 @@
 				"typeProperties": {
 					"variableName": "InvoiceOld",
 					"value": {
-						"value": "@{activity('OldInvoice').output.firstRow.OldChangeVersion}",
+						"value": "@{activity('LookupInvoiceOld').output.firstRow.OldChangeVersion}",
 						"type": "Expression"
 					}
 				}
@@ -105,25 +105,25 @@
 				"type": "IfCondition",
 				"dependsOn": [
 					{
-						"activity": "Set var new watermark",
+						"activity": "Set InvoiceNew",
 						"dependencyConditions": [
 							"Succeeded"
 						]
 					},
 					{
-						"activity": "Set var old watermark",
+						"activity": "Set InvoiceOld",
 						"dependencyConditions": [
 							"Succeeded"
 						]
 					},
 					{
-						"activity": "Set var old customer wm",
+						"activity": "Old Customer wm",
 						"dependencyConditions": [
 							"Succeeded"
 						]
 					},
 					{
-						"activity": "Set var new customer wm",
+						"activity": "Set CustomerNew",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -137,7 +137,7 @@
 					},
 					"ifFalseActivities": [
 						{
-							"name": "Wait1_FALSE",
+							"name": "Nothing to do",
 							"type": "Wait",
 							"dependsOn": [],
 							"userProperties": [],
@@ -294,7 +294,7 @@
 				}
 			},
 			{
-				"name": "NewCustomer",
+				"name": "LookupCustomerNew",
 				"type": "Lookup",
 				"dependsOn": [],
 				"policy": {
@@ -323,11 +323,11 @@
 				}
 			},
 			{
-				"name": "Set var new customer wm",
+				"name": "Set CustomerNew",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
-						"activity": "NewCustomer",
+						"activity": "LookupCustomerNew",
 						"dependencyConditions": [
 							"Succeeded"
 						]
@@ -337,13 +337,13 @@
 				"typeProperties": {
 					"variableName": "CustomerNew",
 					"value": {
-						"value": "@{activity('NewCustomer').output.firstRow.NewChangeVersion}",
+						"value": "@{activity('LookupCustomerNew').output.firstRow.NewChangeVersion}",
 						"type": "Expression"
 					}
 				}
 			},
 			{
-				"name": "Set var old customer wm",
+				"name": "Old Customer wm",
 				"type": "SetVariable",
 				"dependsOn": [
 					{
